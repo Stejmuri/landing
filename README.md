@@ -1,2 +1,0 @@
-# landing
-Actividad En Clase
