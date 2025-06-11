@@ -1,6 +1,6 @@
 "use strict";
 import { fetchFakerData } from './functions.js';
-
+import { saveVote } from "./firebase.js";
 
 (function () {
     const welcomeMessage = "¡Bienvenido a nuestra página!";
@@ -71,8 +71,43 @@ const renderCards = (items) => {
 };
 
 
+
+// Función para habilitar el formulario
+const enableForm = () => {
+  const form = document.getElementById("form_voting");
+
+  if (!form) {
+    console.warn("No se encontró el formulario con ID 'form_voting'.");
+    return;
+  }
+
+  form.addEventListener("submit", async (event) => {
+    event.preventDefault(); // Evita el comportamiento por defecto
+    console.log("Formulario enviado"); // 👈 Nuevo log para verificar
+
+    const input = document.getElementById("select_product");
+    const productID = input ? input.value.trim() : "";
+
+    if (!productID) {
+      alert("Por favor selecciona un producto válido.");
+      return;
+    }
+
+    const result = await saveVote(productID);
+
+    if (result.success) {
+      alert(result.message); // Muestra mensaje de éxito
+      form.reset();          // Limpia el formulario
+    } else {
+      alert("Error: " + result.message); // Muestra mensaje de error
+    }
+  });
+};
+
+
 (() => {
     showToast();
     showVideo();
     loadData();
+    enableForm();
 })();
