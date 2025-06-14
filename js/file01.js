@@ -1,6 +1,6 @@
 "use strict";
 import { fetchFakerData } from './functions.js';
-import { saveVote } from "./firebase.js";
+import { getVotes, saveVote } from "./firebase.js";
 
 (function () {
     const welcomeMessage = "¡Bienvenido a nuestra página!";
@@ -74,40 +74,93 @@ const renderCards = (items) => {
 
 // Función para habilitar el formulario
 const enableForm = () => {
-  const form = document.getElementById("form_voting");
+    const form = document.getElementById("form_voting");
 
-  if (!form) {
-    console.warn("No se encontró el formulario con ID 'form_voting'.");
-    return;
-  }
-
-  form.addEventListener("submit", async (event) => {
-    event.preventDefault(); // Evita el comportamiento por defecto
-    console.log("Formulario enviado"); // 👈 Nuevo log para verificar
-
-    const input = document.getElementById("select_product");
-    const productID = input ? input.value.trim() : "";
-
-    if (!productID) {
-      alert("Por favor selecciona un producto válido.");
-      return;
+    if (!form) {
+        console.warn("No se encontró el formulario con ID 'form_voting'.");
+        return;
     }
 
-    const result = await saveVote(productID);
+    form.addEventListener("submit", async (event) => {
+        event.preventDefault(); // Evita el comportamiento por defecto
+        console.log("Formulario enviado"); // 👈 Nuevo log para verificar
 
-    if (result.success) {
-      alert(result.message); // Muestra mensaje de éxito
-      form.reset();          // Limpia el formulario
-    } else {
-      alert("Error: " + result.message); // Muestra mensaje de error
-    }
-  });
+        const input = document.getElementById("select_product");
+        const productID = input ? input.value.trim() : "";
+
+        if (!productID) {
+            alert("Por favor selecciona un producto válido.");
+            return;
+        }
+
+        const result = await saveVote(productID);
+
+        if (result.success) {
+            alert(result.message);
+            form.reset();
+            await displayVotes(); // 👈 Actualizar tabla de votos
+        } else {
+            alert("Error: " + result.message);
+        }
+    });
 };
 
+const displayVotes = async () => {
+    const result = await getVotes();
+
+    const container = document.getElementById("results");
+
+    if (!result.success) {
+        container.innerHTML = `<p class="text-red-600">Error al obtener votos: ${result.message}</p>`;
+        return;
+    }
+
+    const data = result.data;
+
+    if (!data || Object.keys(data).length === 0) {
+        container.innerHTML = `<p class="text-gray-600">No hay votos registrados aún.</p>`;
+        return;
+    }
+
+    // Contar votos por producto
+    const conteo = {};
+    Object.values(data).forEach(voto => {
+        conteo[voto.productID] = (conteo[voto.productID] || 0) + 1;
+    });
+
+    // Crear tabla
+    let html = `
+    <table class="w-full border-collapse mt-4 text-sm text-left">
+      <thead class="bg-gray-100 text-gray-700">
+        <tr>
+          <th class="p-2 border">Producto</th>
+          <th class="p-2 border">Total de votos</th>
+        </tr>
+      </thead>
+      <tbody>
+  `;
+
+    for (const [producto, total] of Object.entries(conteo)) {
+        html += `
+      <tr>
+        <td class="p-2 border">${producto}</td>
+        <td class="p-2 border text-center">${total}</td>
+      </tr>
+    `;
+    }
+
+    html += `
+      </tbody>
+    </table>
+  `;
+
+    container.innerHTML = html;
+};
 
 (() => {
     showToast();
     showVideo();
     loadData();
     enableForm();
+    displayVotes();
 })();

@@ -1,7 +1,7 @@
 // Importar funciones de Firebase v11.9.1 desde CDN
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
-import { getDatabase, ref, set, push } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+import { getDatabase, ref, set, push, get, child } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
 
 // Objeto de configuración desde variables de entorno (.env)
 
@@ -38,5 +38,23 @@ export const saveVote = async (productID) => {
     return { success: true, message: "Voto guardado correctamente." };
   } catch (error) {
     return { success: false, message: "Error al guardar el voto: " + error.message };
+  }
+}
+
+//
+// ✅ Función para obtener los votos
+//
+export const getVotes = async () => {
+  try {
+    const dbRef = ref(database);
+    const snapshot = await get(child(dbRef, "votes"));
+
+    if (snapshot.exists()) {
+      return { success: true, data: snapshot.val() };
+    } else {
+      return { success: true, data: {}, message: "No hay votos registrados." };
+    }
+  } catch (error) {
+    return { success: false, message: `Error al obtener los votos: ${error.message}` };
   }
 };
